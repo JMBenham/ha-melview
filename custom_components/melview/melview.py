@@ -129,6 +129,24 @@ class MelViewZone:
         self.id = id
         self.name = name
         self.status = status
+        self.temp = None
+        self.humidity = None
+        self.heat = None
+        self.cool = None
+        self.damper = None
+
+    def setup_zone_sensor(self, temp, humidity, heat, cool, damper):
+        self.temp = temp
+        self.humidity = humidity
+        self.heat = heat
+        self.cool = cool
+        self.damper = damper
+
+    def __str__(self):
+        if self.temp is not None:
+            return f"ID: {self.id}, Name: {self.name}, Status: {self.status}, Temp: {self.temp}, Humidity: {self.humidity}, Heat: {self.heat} Cool: {self.cool}, Damper: {self.damper}"
+        else:
+            return f"ID: {self.id}, Name: {self.name}, Status: {self.status}"
 
 
 class MelViewDevice:
@@ -260,10 +278,12 @@ class MelViewDevice:
                         )
 
                     if "zones" in self._json:
-                        self._zones = {
-                            z["zoneid"]: MelViewZone(z["zoneid"], z["name"], z["status"])
-                            for z in self._json["zones"]
-                        }
+                        for z in self._json["zones"]:
+                            zone_obj = MelViewZone(z["zoneid"], z["name"], z["status"])
+                            if z["temp"] is not None:
+                                zone_obj.setup_zone_sensor(z["temp"], z["humidity"], z["heat"] , z["cool"], z["damper"])
+                            self._zones[z["zoneid"]] = zone_obj
+
                     if "standby" in self._json:
                         self._standby = self._json["standby"]
                     return True

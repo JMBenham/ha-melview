@@ -31,6 +31,7 @@ async def async_setup_entry(
     coordinators = entry.runtime_data
 
     entities = [MelViewCurrentTempSensor(coordinator) for coordinator in coordinators]
+
     for coordinator in coordinators:
         if coordinator.device.get_unit_type() == "ERV":
             entities.extend(
@@ -41,6 +42,15 @@ async def async_setup_entry(
                     MelViewCoreEfficiencySensor(coordinator),
                 ]
             )
+        
+        zones = coordinator.get_zones()
+        for zone in zones:
+            if zone.temp is not None:
+                entities.extend([
+                    MelViewZoneTemperatureSensor(coordinator, zone),
+                    MelViewZoneHumiditySensor(coordinator, zone)
+                ])
+
     async_add_entities(entities, update_before_add=True)
 
 
@@ -66,6 +76,37 @@ class MelViewCurrentTempSensor(MelViewBaseEntity, SensorEntity):
         data = self.coordinator.data or {}
         return float(data.get("roomtemp", 0))
 
+class MelViewZoneTemperatureSensor(MelViewBaseEntity, SensorEntity):
+    def __init__(self, coordinator: MelViewCoordinator, zone):
+        super().__init__(coordinator, coordinator.device)
+        api = coordinator.device
+        self._id = zone.id
+        self._attr_unique_id = f"{self.coordinator.get_id()}-{self._id}_zone_temp"
+        self._attr_name = f"Zone {zone.name} Temperature"
+        self._attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+        self._attr_device_class = SensorDeviceClass.TEMPERATURE
+
+    @property
+    def native_value(self):
+        zone = self.coordinator.get_zone(self._id)
+        return float(zone.temp)
+
+class MelViewZoneHumiditySensor(MelViewBaseEntity, SensorEntity):
+    def __init__(self, coordinator: MelViewCoordinator, zone):
+        super().__init__(coordinator, coordinator.device)
+        api = coordinator.device
+        self._id = zone.id
+        self._attr_unique_id = f"{self.coordinator.get_id()}-{self._id}_zone_humidity"
+        self._attr_name = f"Zone {zone.name} Humidity"
+        self._attr_native_unit_of_measurement = UnitOfTemperature.PERCENTAGE
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+        self._attr_device_class = SensorDeviceClass.HUMIDITY
+
+    @property
+    def native_value(self):
+        zone = self.coordinator.get_zone(self._id)
+        return float(zone.humidity)
 
 class MelViewOutdoorTempSensor(MelViewBaseEntity, SensorEntity):
     """Sensor representing the outdoor (fresh air) temperature."""
