@@ -48,7 +48,8 @@ async def async_setup_entry(
             if zone.temp is not None:
                 entities.extend([
                     MelViewZoneTemperatureSensor(coordinator, zone),
-                    MelViewZoneHumiditySensor(coordinator, zone)
+                    MelViewZoneHumiditySensor(coordinator, zone),
+                    MelViewZoneDamperSensor(coordinator, zone)
                 ])
 
     async_add_entities(entities, update_before_add=True)
@@ -107,6 +108,20 @@ class MelViewZoneHumiditySensor(MelViewBaseEntity, SensorEntity):
     def native_value(self):
         zone = self.coordinator.get_zone(self._id)
         return float(zone.humidity)
+
+class MelViewZoneDamperSensor(MelViewBaseEntity, SensorEntity):
+    def __init__(self, coordinator: MelViewCoordinator, zone):
+        super().__init__(coordinator, coordinator.device)
+        api = coordinator.device
+        self._id = zone.id
+        self._attr_unique_id = f"{self.coordinator.get_id()}-{self._id}_zone_damper"
+        self._attr_name = f"Zone {zone.name} Damper"
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+
+    @property
+    def native_value(self):
+        zone = self.coordinator.get_zone(self._id)
+        return float(zone.damper)
 
 class MelViewOutdoorTempSensor(MelViewBaseEntity, SensorEntity):
     """Sensor representing the outdoor (fresh air) temperature."""
