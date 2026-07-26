@@ -518,6 +518,12 @@ class MelViewDevice:
         """Turn off a zone"""
         return await self.async_send_command(f"Z{zoneid}0")
 
+    """
+    async def async_set_zone_temperature(self, zoneid, temperature):
+        # Ensure that it is not below min or greater than max.
+        return await self.async_send_command(f"Z{zoneid}0")
+    """
+    
     async def async_power_on(self):
         """Turn on the unit"""
         return await self.async_send_command("PW1")
